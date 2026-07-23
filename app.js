@@ -9,6 +9,7 @@ import hpp from "hpp";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import mongoSanitize from "express-mongo-sanitize";
+import healthRoutes from "./routes/health.route.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -27,13 +28,22 @@ const limiter = rateLimit({
 
 app.use(helmet());
 app.use(hpp());
-app.use(cors(
-  { 
-    origin: process.env.CLIENT_URL || "http://localhost:5173", 
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS" , "HEAD"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin", "Access-Control-Allow-Origin" , "device-remember-token"],
-    })); 
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "Accept",
+      "Origin",
+      "Access-Control-Allow-Origin",
+      "device-remember-token",
+    ],
+  }),
+);
 app.use("/api", limiter);
 
 if (NODE_ENV === "development") {
@@ -46,6 +56,9 @@ app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 app.use(cookieParser());
 app.use(mongoSanitize());
 //404 Handler
+
+//API Routes
+app.use("/health", healthRoutes);
 
 app.use((req, res, next) => {
   res.status(404).json({
