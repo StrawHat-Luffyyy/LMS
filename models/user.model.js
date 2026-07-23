@@ -99,7 +99,7 @@ userSchema.methods.getResetPasswordToken = function () {
   return resetToken;
 };
 
-userSchema.virtual("enrolledCoursesCount").get(function () {
+userSchema.virtual("totalEnrolledCourses").get(function () {
   return this.enrolledCourses.length;
 });
 
