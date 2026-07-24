@@ -10,6 +10,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import mongoSanitize from "express-mongo-sanitize";
 import healthRoutes from "./routes/health.route.js";
+import userRoutes from "./routes/user.route.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -59,6 +60,7 @@ app.use(mongoSanitize());
 
 //API Routes
 app.use("/health", healthRoutes);
+app.use("/api/v1/users", userRoutes);
 
 app.use((req, res, next) => {
   res.status(404).json({

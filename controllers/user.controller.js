@@ -1,7 +1,7 @@
 import { User } from "../models/user.model.js";
-import {catchAsync} from "../middlewares/error.middleware.js";
+import { catchAsync } from "../middlewares/error.middleware.js";
 import { generateToken } from "../utils/generateToken.js";
-
+import { uploadMedia } from "../utils/cloudinary.js";
 export const createUserAccount = catchAsync(async (req, res, next) => {
   const { name, email, password, role = "student" } = req.body;
   if (!name || !email || !password) {
@@ -55,12 +55,11 @@ export const logoutUser = catchAsync(async (req, res, next) => {
   });
 });
 
-
 export const getCurrentUserProfile = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.id).populate({
-    path : "enrolledCourses.course",
-    select : "title thumbnail description",
-  })
+    path: "enrolledCourses.course",
+    select: "title thumbnail description",
+  });
   if (!user) {
     return next(new ApiError("User not found", 404));
   }
@@ -69,9 +68,39 @@ export const getCurrentUserProfile = catchAsync(async (req, res, next) => {
     data: {
       ...user.toJSON(),
       totalEnrolledCourses: user.totalEnrolledCourses,
-    
     },
   });
+});
 
-
-})
+export const updateUserProfile = catchAsync(async (req, res, next) => {
+  const { name, email, bio } = req.body;
+  const updateData = {
+    name,
+    email: email?.toLowerCase(),
+    bio,
+  };
+  if (req.file) {
+    const avatarResult = await uploadMedia(req.file.path);
+    updateData.avatar = avatarResult.secure_url;
+  }
+  //Delete old avatar from cloudinary if new avatar is uploaded
+  const user = await User.findById(req.id);
+  if (user.avatar && user.avatar !== "default-avatar.png") {
+    await deleteMediaFromCloudinary(user.avatar);
+  }
+  const updatedUser = await User.findByIdAndUpdate(req.id, updateData, {
+    new: true,
+    runValidators: true,
+  });
+  if (!updatedUser) {
+    return next(new ApiError("User not found", 404));
+  }
+  res.status(200).json({
+    status: "success",
+    message: "Profile updated successfully",
+    data: {
+      ...updatedUser.toJSON(),
+      totalEnrolledCourses: updatedUser.totalEnrolledCourses,
+    },
+  });
+});
